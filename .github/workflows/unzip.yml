@@ -1,0 +1,61 @@
+name: Unzip project
+
+# Put this file at .github/workflows/unzip.yml.
+# Upload jonaki-mobile.zip to the repository root: this workflow unzips it,
+# commits the extracted files to the repository root, removes the zip,
+# then starts the "Build Android APK" workflow.
+on:
+  push:
+    branches: [main]
+    paths: ["*.zip"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  unzip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Unzip jonaki-mobile.zip
+        run: |
+          set -e
+          ZIP=$(find . -maxdepth 1 -iname 'jonaki-mobile*.zip' | head -n1)
+          [ -n "$ZIP" ] || { echo "No jonaki-mobile.zip in the repository root."; exit 1; }
+          echo "Unzipping $ZIP"
+          rm -rf /tmp/_unzipped && mkdir -p /tmp/_unzipped
+          unzip -q "$ZIP" -d /tmp/_unzipped
+          INDEX=$(find /tmp/_unzipped -name index.html -not -path '*/node_modules/*' | head -n1)
+          [ -n "$INDEX" ] || { echo "index.html not found inside $ZIP"; exit 1; }
+          SRC=$(dirname "$INDEX")
+          # copy everything except .github (a workflow cannot push workflow files with the default token)
+          tar -C "$SRC" --exclude='./.github' -cf - . | tar -C . -xf -
+          git rm -q -f "$ZIP"
+          echo "Extracted from: $SRC"
+          ls -A
+
+      - name: Commit extracted files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to commit"
+          else
+            git commit -m "Unzip jonaki-mobile.zip"
+            git push
+          fi
+
+      - name: Start APK build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f .github/workflows/build-apk.yml ]; then
+            gh workflow run build-apk.yml --ref "${{ github.ref_name }}"
+          else
+            echo "build-apk.yml not found, skipping."
+          fi
