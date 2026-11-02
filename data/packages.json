@@ -1,0 +1,11 @@
+[
+  { "id": "n1", "cat": "net", "title": "১ জিবি", "gb": 1, "min": 0, "days": 3, "price": 39 },
+  { "id": "n2", "cat": "net", "title": "৩ জিবি", "gb": 3, "min": 0, "days": 7, "price": 99 },
+  { "id": "n3", "cat": "net", "title": "১০ জিবি", "gb": 10, "min": 0, "days": 30, "price": 299 },
+  { "id": "n4", "cat": "net", "title": "২৫ জিবি", "gb": 25, "min": 0, "days": 30, "price": 499 },
+  { "id": "m1", "cat": "min", "title": "১০০ মিনিট", "gb": 0, "min": 100, "days": 7, "price": 59 },
+  { "id": "m2", "cat": "min", "title": "৩০০ মিনিট", "gb": 0, "min": 300, "days": 30, "price": 149 },
+  { "id": "m3", "cat": "min", "title": "৬০০ মিনিট", "gb": 0, "min": 600, "days": 30, "price": 249 },
+  { "id": "c1", "cat": "combo", "title": "৫ জিবি + ১০০ মিনিট", "gb": 5, "min": 100, "days": 15, "price": 199 },
+  { "id": "c2", "cat": "combo", "title": "২০ জিবি + ৫০০ মিনিট", "gb": 20, "min": 500, "days": 30, "price": 449 }
+]

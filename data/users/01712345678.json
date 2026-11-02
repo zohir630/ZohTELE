@@ -1,0 +1,17 @@
+{
+  "name": "রাফি আহমেদ",
+  "number": "01712345678",
+  "pinHash": "cc5d001f0ec42d80caf9017454a0a16997b0c4505b289251a417ac4023fbe0d0",
+  "balance": 250.5,
+  "expiry": "2026-11-28",
+  "usage": {
+    "net": { "left": 4.2, "total": 10 },
+    "min": { "left": 135, "total": 300 },
+    "sms": { "left": 40, "total": 100 }
+  },
+  "tx": [
+    { "id": "JKDEMO0003", "type": "recharge", "title": "রিচার্জ", "method": "বিকাশ", "amount": 200, "at": "2026-11-01T14:20:00+06:00" },
+    { "id": "JKDEMO0002", "type": "pack", "title": "৩ জিবি · ৭ দিন", "method": "ব্যালেন্স", "amount": -99, "at": "2026-10-28T10:05:00+06:00" },
+    { "id": "JKDEMO0001", "type": "usage", "title": "কল চার্জ", "method": "ব্যালেন্স", "amount": -14.5, "at": "2026-10-26T21:40:00+06:00" }
+  ]
+}
