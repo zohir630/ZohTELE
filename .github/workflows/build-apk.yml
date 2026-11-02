@@ -1,0 +1,108 @@
+name: Build Android APK
+
+# Put this file at .github/workflows/build-apk.yml in your repository.
+# The repository root needs jonaki-mobile.zip (or the already-unzipped site files).
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Step 1: unzip first
+      - name: Unzip project
+        run: |
+          set -e
+          ZIP=$(find . -maxdepth 3 -iname 'jonaki-mobile*.zip' -not -path './node_modules/*' -not -path './_android/*' | head -n1)
+          if [ -n "$ZIP" ]; then
+            echo "Unzipping $ZIP"
+            rm -rf _src && mkdir -p _src
+            unzip -q "$ZIP" -d _src
+            INDEX=$(find _src -name index.html -not -path '*/node_modules/*' | head -n1)
+            [ -n "$INDEX" ] || { echo "index.html not found inside $ZIP"; exit 1; }
+            WEB=$(dirname "$INDEX")
+          elif [ -f index.html ]; then
+            echo "No zip found, using repository root"
+            WEB=.
+          else
+            echo "Add jonaki-mobile.zip (or the site files) to the repository root."
+            exit 1
+          fi
+          echo "WEB=$WEB" >> "$GITHUB_ENV"
+          echo "Web root: $WEB"
+          ls "$WEB"
+
+      # Step 2: copy web files into a Capacitor project
+      - name: Prepare Capacitor project
+        run: |
+          set -e
+          rm -rf _android && mkdir -p _android/www
+          tar -C "$WEB" \
+            --exclude='./.git' --exclude='./.github' --exclude='./_src' --exclude='./_android' \
+            --exclude='./node_modules' --exclude='./dist' --exclude='*.zip' --exclude='./README.md' \
+            -cf - . | tar -C _android/www -xf -
+          test -f _android/www/index.html
+          cd _android
+          npm init -y >/dev/null
+          npm install --save @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.jonaki.mobile",
+            "appName": "জোনাকি মোবাইল",
+            "webDir": "www",
+            "backgroundColor": "#09090b",
+            "android": { "allowMixedContent": false }
+          }
+          EOF
+          npx cap add android
+          npx cap sync android
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK packages
+        run: yes | sdkmanager "platforms;android-34" "build-tools;34.0.0" >/dev/null
+
+      # Step 3: build
+      - name: Build debug APK
+        working-directory: _android/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Collect APK
+        run: |
+          mkdir -p dist
+          cp _android/android/app/build/outputs/apk/debug/app-debug.apk dist/jonaki-mobile-debug.apk
+          ls -lh dist
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jonaki-mobile-apk
+          path: dist/jonaki-mobile-debug.apk
+          if-no-files-found: error
+
+      # Optional: git tag v1.0.0 && git push --tags  ->  APK attached to a GitHub Release
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/jonaki-mobile-debug.apk
+          
